@@ -1,45 +1,19 @@
-import express from "express";
-import bodyParser from "body-parser";
-import { filterImageFromURL, deleteLocalFiles, isValidUrl } from "./util/util";
+import bodyParser from "express";
+import express, { Response, Request } from "express";
+import { isValidUrl, deleteLocalFiles, filterImageFromURL } from "./util/util";
 
 (async () => {
   // Init the Express application
-  const app = express();
+  const app: any = express();
 
   // Set the network port
-  const port = process.env.PORT || 8082;
+  const port: string = process.env.PORT || "8082";
 
   // Use the body parser middleware for post requests
   app.use(bodyParser.json());
 
   // @TODO1 IMPLEMENT A RESTFUL ENDPOINT
   // GET /filteredimage?image_url={{URL}}
-  app.get("/filteredImage", async (req, res) => {
-    const image_url: string = req?.query?.image_url ?? "";
-
-    if (!image_url || image_url === "") {
-      return res.status(404).json({
-        errorMessage: "image_url is missing.",
-      });
-    }
-
-    if (!isValidUrl(image_url)) {
-      return res
-        .status(400)
-        .json({ errorMessage: "image_url is not a valid url." });
-    }
-
-    try {
-      const filteredImagePath: string = await filterImageFromURL(image_url);
-      res.status(200).sendFile(filteredImagePath);
-      await deleteLocalFiles([filteredImagePath]);
-    } catch (e) {
-      return res.status(500).json({
-        errorMessage:
-          "There was an error while processing image_url, please try again.",
-      });
-    }
-  });
   // endpoint to filter an image from a public url.
   // IT SHOULD
   //    1
@@ -54,11 +28,51 @@ import { filterImageFromURL, deleteLocalFiles, isValidUrl } from "./util/util";
 
   /**************************************************************************** */
 
+  app.get("/filteredImage", async (req: Request, res: Response) => {
+    const { image_url }: { image_url: string } = req.query;
+
+    if (!image_url) {
+      return res.status(400).json({
+        errorMessage: "image_url is missing.",
+      });
+    }
+
+    if (!isValidUrl(image_url)) {
+      return res
+        .status(404)
+        .json({ errorMessage: "image_url is not a valid url." });
+    }
+
+    if (
+      !(
+        image_url.toLowerCase().endsWith(".jpeg") ||
+        image_url.toLowerCase().endsWith(".jpg") ||
+        image_url.toLowerCase().endsWith(".png") ||
+        image_url.toLowerCase().endsWith(".tiff") ||
+        image_url.toLowerCase().endsWith(".gif")
+      )
+    ) {
+      return res.status(400).json({
+        errorMessage: "We only support .jpeg, .jpg, or png image format.",
+      });
+    }
+
+    try {
+      const filteredImagePath: string = await filterImageFromURL(image_url);
+      res.status(200).sendFile(filteredImagePath);
+    } catch (e) {
+      console.log(e);
+      return res.status(500).json({
+        errorMessage:
+          "There was an error while processing image_url, please try again.",
+      });
+    }
+  });
   //! END @TODO1
 
   // Root Endpoint
   // Displays a simple message to the user
-  app.get("/", async (req, res) => {
+  app.get("/", async (req: any, res: any) => {
     res.send("try GET /filteredimage?image_url={{}}");
   });
 
