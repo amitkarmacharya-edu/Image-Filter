@@ -14,7 +14,32 @@ import { filterImageFromURL, deleteLocalFiles, isValidUrl } from "./util/util";
 
   // @TODO1 IMPLEMENT A RESTFUL ENDPOINT
   // GET /filteredimage?image_url={{URL}}
+  app.get("/filteredImage", async (req, res) => {
+    const image_url: string = req?.query?.image_url ?? "";
 
+    if (!image_url || image_url === "") {
+      return res.status(404).json({
+        errorMessage: "image_url is missing.",
+      });
+    }
+
+    if (!isValidUrl(image_url)) {
+      return res
+        .status(400)
+        .json({ errorMessage: "image_url is not a valid url." });
+    }
+
+    try {
+      const filteredImagePath: string = await filterImageFromURL(image_url);
+      res.status(200).sendFile(filteredImagePath);
+      await deleteLocalFiles([filteredImagePath]);
+    } catch (e) {
+      return res.status(500).json({
+        errorMessage:
+          "There was an error while processing image_url, please try again.",
+      });
+    }
+  });
   // endpoint to filter an image from a public url.
   // IT SHOULD
   //    1
